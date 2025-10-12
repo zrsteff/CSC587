@@ -1,0 +1,110 @@
+---
+title: "HW2"
+author: "Zach Steffens"
+date: "2025-10-03"
+output:
+  pdf_document: default
+  html_document: default
+  word_document: default
+---
+
+#Problem 2
+```{r}
+library(tidyverse)
+library(tinytex)
+library(knitr)
+compute_distances <- function(x, y) {
+
+# x and y must have the same length
+  if (length(x) != length(y)) {
+    stop("Error: Vectors 'x' and 'y' must be the same length.")
+  }
+  
+# Manhattan distance: sum of absolute differences
+  manhattan <- sum(abs(x - y))
+  
+# Euclidean distance: square root of sum of squared differences
+  euclidean <- sqrt(sum((x - y)^2))
+  
+# Return both metrics with titles
+  list(
+    manhattan = manhattan,
+    euclidean = euclidean
+  )
+}
+```
+
+v1 = c(1.5, -2.0, 3.3, 5.5, 10.2, 8.6)
+v2 = c(0.5, 1.0, -1.3, 4.5, 2.5, 11.4)
+
+distances = compute_distances(v1,v2)
+print(distances)
+
+
+#Problem 4
+
+```{r}
+cor_val <- cor(mtcars$mpg, mtcars$wt)
+print(cor_val)
+
+plot(
+  mtcars$wt,
+  mtcars$mpg,
+  xlab = "mtcars$wt",
+  ylab = "mtcars$mpg",
+  main = paste("mpg vs wt (r =", round(cor_val, 2), ")"),
+  pch = 19,
+  col = "steelblue"
+)
+
+abline(lm(mpg ~ wt, data = mtcars), col = "darkred", lwd = 2)
+
+```
+#Problem 5
+```{r}
+library(tidyverse)
+metabolite=read_csv("C:\\Users\\zrsm9\\OneDrive\\Documents\\MS Data Analytics\\CSC587\\DATA\\metabolite.csv",show_col_types = FALSE)
+df= data.frame(metabolite)
+threshold = .75
+miss_pct = colMeans(is.na(df))
+
+df_clean = df[,miss_pct <= threshold]
+num_cols = sapply(df_clean,is.numeric)
+df_clean[num_cols] = lapply(df_clean[num_cols], function(col) {
+  med = median(col, na.rm = TRUE)
+  col[is.na(col)] = med
+  col
+})
+```
+
+#Problem 6
+```{r}
+
+numeric_data <- df_clean %>%
+  select(-Label) %>%           # drop Label
+  select_if(is.numeric)        # keep only numeric columns
+
+pca_res <- prcomp(numeric_data, center = TRUE, scale. = TRUE)
+
+explained_var <- summary(pca_res)$importance[2, 1:2] * 100
+pc1_lab <- sprintf("PC1 (%.1f%%)", explained_var[1])
+pc2_lab <- sprintf("PC2 (%.1f%%)", explained_var[2])
+
+scores_df <- as_tibble(pca_res$x[, 1:2]) %>%
+  rename(PC1 = PC1, PC2 = PC2) %>%
+  bind_cols(Label = df_clean$Label)
+
+p <- ggplot(scores_df, aes(x = PC1, y = PC2, color = Label)) +
+  geom_point(size = 3, alpha = 0.8) +
+  labs(
+    title = "PCA of Metabolites – PC1 vs PC2",
+    x = pc1_lab,
+    y = pc2_lab,
+    color = "Label"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(legend.position = "right")
+
+print(p)
+```
+
